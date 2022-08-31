@@ -13,6 +13,7 @@ class ImportsFinder(ast.NodeVisitor):
     imports: List[ImportSpec]
     direct_imports: List[ImportSpec]
     conditional_imports: List[ImportSpec]
+    try_imports: List[ImportSpec]
     functions_imports: List[ImportSpec]
 
     def __init__(self, package: Optional[str] = None) -> None:
@@ -20,9 +21,11 @@ class ImportsFinder(ast.NodeVisitor):
         self.imports = []
         self.direct_imports = []
         self.conditional_imports = []
+        self.try_imports = []
         self.functions_imports = []
         self.in_conditional: List[None] = []
         self.in_function: List[None] = []
+        self.in_try: List[None] = []
         super().__init__()
 
     def search(self, tree: ast.AST):
@@ -36,7 +39,9 @@ class ImportsFinder(ast.NodeVisitor):
                 self.conditional_imports.append(info)
             if self.in_function:
                 self.functions_imports.append(info)
-            if not (self.in_conditional or self.in_function):
+            if self.in_try:
+                self.try_imports.append(info)
+            if not any((self.in_conditional, self.in_function, self.in_try)):
                 self.direct_imports.append(info)
         return super().generic_visit(node)
 
@@ -51,7 +56,9 @@ class ImportsFinder(ast.NodeVisitor):
                 self.conditional_imports.append(info)
             if self.in_function:
                 self.functions_imports.append(info)
-            if not (self.in_conditional or self.in_function):
+            if self.in_try:
+                self.try_imports.append(info)
+            if not any((self.in_conditional, self.in_function, self.in_try)):
                 self.direct_imports.append(info)
         return super().generic_visit(node)
 
@@ -59,6 +66,12 @@ class ImportsFinder(ast.NodeVisitor):
         self.in_conditional.append(None)
         result = super().generic_visit(node)
         self.in_conditional.pop()
+        return result
+
+    def visit_Try(self, node: ast.Try) -> Any:
+        self.in_try.append(None)
+        result = super().generic_visit(node)
+        self.in_try.pop()
         return result
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
