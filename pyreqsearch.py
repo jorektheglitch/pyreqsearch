@@ -97,10 +97,6 @@ def find_imports(pyfile: str, package: Optional[str] = None):
     file_ast = ast.parse(source)
     finder = ImportsFinder(package)
     finder.search(file_ast)
-    # print(finder.imports)
-    # print(finder.direct_imports)
-    # print(finder.conditional_imports)
-    # print(finder.functions_imports)
     return finder.direct_imports
 
 
@@ -117,10 +113,8 @@ def requirements_info(pyfile):
             continue
         else:
             visited.add(path)
-        # print(f"Dependencies for {dependent} module from {path or 'internals'}")
         imports = find_imports(path, dependent_package)
         for source, name in imports:
-            # print(f"  {source} ({name or source} for {dependent})")
             if source == ".":
                 module = "." + name
                 package = dependent_package
